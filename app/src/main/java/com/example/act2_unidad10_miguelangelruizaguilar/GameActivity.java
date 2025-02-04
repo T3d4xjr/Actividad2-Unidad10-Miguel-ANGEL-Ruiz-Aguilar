@@ -1,38 +1,56 @@
 package com.example.act2_unidad10_miguelangelruizaguilar;
 
+import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.MotionEvent;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class GameActivity extends AppCompatActivity {
-
-    private GameView gameView;
+    TextView tvScore;
+    Button btnSaveScore, btnGoBack;
+    int score;
+    String userName;
+    SQLiteDatabase db;
+    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        gameView = new GameView(this);
-        setContentView(gameView);
-    }
+        setContentView(R.layout.activity_game);
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        float x = event.getX();
-        gameView.onTouch(x);  // Controlar la paleta usando el toque
-        return true;
-    }
+        tvScore = findViewById(R.id.tvScore);
+        btnSaveScore = findViewById(R.id.btnSaveScore);
+        btnGoBack = findViewById(R.id.btnGoBack);
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        gameView.pauseGame();
-    }
+        // Obtener el nombre de usuario desde la Intent
+        userName = getIntent().getStringExtra("user_name");
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        gameView.resumeGame();
+        // Instanciar la base de datos
+        dbHelper = new DatabaseHelper(this);
+        db = dbHelper.getWritableDatabase();
+
+        // Generar una puntuación aleatoria
+        score = (int) (Math.random() * 1000);
+        tvScore.setText("Puntuación: " + score);
+
+        // Guardar la puntuación al presionar el botón
+        btnSaveScore.setOnClickListener(v -> {
+            if (userName != null && !userName.isEmpty()) {
+                dbHelper.insertScore(userName, score);
+                Toast.makeText(GameActivity.this, "Puntuación guardada", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(GameActivity.this, "Por favor ingresa un nombre de usuario", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Volver a la pantalla principal
+        btnGoBack.setOnClickListener(v -> {
+            Intent intent = new Intent(GameActivity.this, MainActivity.class);
+            startActivity(intent);
+        });
     }
 }

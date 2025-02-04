@@ -6,94 +6,69 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import java.util.ArrayList;
-import java.util.List;
+public class DatabaseHelper extends SQLiteOpenHelper {
 
-public class DatabaseHelper {
-    private SQLiteOpenHelper dbHelper;
+    public static final String COLUMN_NAME = "name";
+    public static final String COLUMN_SCORE = "score";
+    public static final String COLUMN_TIMESTAMP = "timestamp";
+
+    String sqlCreate = "CREATE TABLE IF NOT EXISTS user_scores (" +
+            "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "name TEXT, " +
+            "score INTEGER, " +
+            "timestamp TEXT" + ")";
 
     public DatabaseHelper(Context context) {
-        dbHelper = new SQLiteOpenHelper(context, "PuntuacionesDB", null, 1) {
-            @Override
-            public void onCreate(SQLiteDatabase sqLiteDatabase) {
-                sqLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS puntuaciones (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "nombre TEXT NOT NULL, " +
-                        "puntuacion INTEGER NOT NULL);");
-
-            }
-
-            @Override
-            public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-                sqLiteDatabase.execSQL("DROP TABLE IF EXISTS puntuaciones");
-                onCreate(sqLiteDatabase);
-
-            }
-        };  // Cambié el nombre de la base de datos
+        super(context, "scoresDB", null, 1);
     }
 
-    // Método para agregar una nueva puntuación
-    public void addScore(String nombre, int puntuacion) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL(sqlCreate);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS user_scores");
+        onCreate(db);
+    }
+
+    // Método para insertar la puntuación en la base de datos
+    public void insertScore(String name, int score) {
+        SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("nombre", nombre);
-        values.put("puntuacion", puntuacion);
-        db.insert("puntuaciones", null, values);  // Cambié el nombre de la tabla a "puntuaciones"
-        db.close();
+        values.put(COLUMN_NAME, name);
+        values.put(COLUMN_SCORE, score);
+        values.put(COLUMN_TIMESTAMP, System.currentTimeMillis());
+        db.insert("user_scores", null, values);
     }
 
     // Método para obtener todas las puntuaciones
-    public List<Score> getAllScores() {
-        List<Score> scoreList = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query("puntuaciones", null, null, null, null, null, "puntuacion DESC");
-
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
-                String nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre"));
-                int puntuacion = cursor.getInt(cursor.getColumnIndexOrThrow("puntuacion"));
-                scoreList.add(new Score(id, nombre, puntuacion));  // Cambié de "Usuario" a "Score"
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        db.close();
-        return scoreList;
+    public Cursor getAllScores() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT _id, name, score, timestamp FROM user_scores", null);
     }
 
     // Método para obtener puntuaciones filtradas por nombre
-    public List<Score> getScoresByName(String nameFilter) {
-        List<Score> scoreList = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query("puntuaciones", null, "nombre LIKE ?", new String[]{"%" + nameFilter + "%"}, null, null, "puntuacion DESC");
-
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
-                String nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre"));
-                int puntuacion = cursor.getInt(cursor.getColumnIndexOrThrow("puntuacion"));
-                scoreList.add(new Score(id, nombre, puntuacion));  // Cambié de "Usuario" a "Score"
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        db.close();
-        return scoreList;
+    public Cursor getFilteredScores(String filterName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT _id, name, score, timestamp FROM user_scores WHERE name LIKE ?";
+        return db.rawQuery(query, new String[]{"%" + filterName + "%"});
     }
 
-    // Método para actualizar una puntuación
+    // Método para actualizar la puntuación de un registro
     public void updateScore(int id, String newName, int newScore) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("nombre", newName);
-        values.put("puntuacion", newScore);
-        db.update("puntuaciones", values, "id = ?", new String[]{String.valueOf(id)});
-        db.close();
+        values.put(COLUMN_NAME, newName);
+        values.put(COLUMN_SCORE, newScore); // Ahora también actualizamos la puntuación
+        db.update("user_scores", values, "_id = ?", new String[]{String.valueOf(id)});
     }
 
-    // Método para eliminar una puntuación
+
+    // Método para eliminar una puntuación de la base de datos
     public void deleteScore(int id) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.delete("puntuaciones", "id = ?", new String[]{String.valueOf(id)});
-        db.close();
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete("user_scores", "_id = ?", new String[]{String.valueOf(id)});
     }
 }

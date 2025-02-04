@@ -21,15 +21,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DataActivity"
+        <activity
+            android:name=".GameActivity"
             android:exported="true">
         </activity>
-        <activity android:name=".GameActivity"
+        <activity
+            android:name=".UserListActivity"
             android:exported="true">
-        </activity>
-        <activity android:name=".DataActivity"
-            android:exported="true"
-            tools:ignore="DuplicateActivity">
         </activity>
     </application>
 
